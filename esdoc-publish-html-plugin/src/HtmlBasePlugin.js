@@ -73,7 +73,17 @@ export default class HtmlBasePlugin {
             return new DocBuilder(this._template, data, tags, null, null);
         };
 
-        const builderUtil = {writeFile, copyDir, readFile};
+        /**
+         * Implementation:
+         *  https://github.com/esdoc/esdoc/blob/38ad523936d425278cc037c9c0e11338faa2709b/src/ESDoc.js#L340
+         * Based on fs-extra:
+         *  https://github.com/jprichardson/node-fs-extra
+         * @type Object builderUtil
+         * @property {function(filePath: string, content: string, option: *)} builderUtil.writeFile
+         * @property {function(srcPath: string, destPath: string)} builderUtil.copy
+         * @property {function(filePath: string): string} builderUtil.readFile
+         */
+        const builderUtil = {writeFile, copy, readFile};
 
         // An object, keys: builder names, values: builder options, if any.
         let builderSet = this.defaultBuilderSet;

@@ -5,7 +5,7 @@ import DocBuilder from './DocBuilder.js';
  * File output builder class.
  */
 export default class FileDocBuilder extends DocBuilder {
-  exec({writeFile, copyDir}) {
+  exec({writeFile}) {
     const ice = this._buildLayoutDoc();
 
     const docs = this._find({kind: 'file'});

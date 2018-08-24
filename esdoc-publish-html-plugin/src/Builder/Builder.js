@@ -31,10 +31,10 @@ export default class Builder {
      * @abstract
      * @param builderUtil Utility functions to build with.
      * @param builderUtil.writeFile {function(html: string, filePath: string)} - to write files with.
-     * @param builderUtil.copyDir {function(src: string, dest: string)} - to copy directories with.
+     * @param builderUtil.copy {function(src: string, dest: string)} - to copy directories/files with.
      * @param builderUtil.readFile {function(filePath: string): string} - to read files with.
      */
-    exec({writeFile, copyDir, readFile}) {
+    exec({writeFile, copy, readFile}) {
     }
 
     /**

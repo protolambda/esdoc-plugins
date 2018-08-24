@@ -7,7 +7,7 @@ import {dateForUTC} from './util.js';
  * Source output html builder class.
  */
 export default class SourceDocBuilder extends DocBuilder {
-  exec({writeFile, copyDir}) {
+  exec({writeFile}) {
     this._loadCoverage(this._builderOptions.coverageFilePath || "coverage.json");
     const ice = this._buildLayoutDoc();
     const fileName = 'source.html';

@@ -17,8 +17,15 @@ const defaultManualRequirements = [
 
 /**
  * Manual Output Builder class.
+ * V2 improvements:
+ * - no breaking links, structured docs (non-flat)
+ *  - link translate repo-relative location to site relative location.
+ *  - translate link extension (.md -> .html)
+ * - assets can be mixed with the markdown, no need to specify an asset folder
+ * - no list of manual files necessary, just specify root folder
+ * -
  */
-export default class ManualDocBuilder extends DocBuilder {
+export default class ManualV2DocBuilder extends DocBuilder {
 
   exec({writeFile, copy, readFile}) {
 
@@ -28,41 +35,36 @@ export default class ManualDocBuilder extends DocBuilder {
 
     if (manuals.length === 0) return;
 
-    const ice = this._buildLayoutDoc();
-    ice.autoDrop = false;
-    ice.attr('rootContainer', 'class', ' manual-root');
-
-    const badgeFileNamePatterns = this._builderOptions.badgeFileNamePatterns || defaultManualRequirements;
     {
-      const fileName = 'manual/index.html';
-      const baseUrl = this._getBaseUrl(fileName);
-      const badge = this._writeBadge(manuals, writeFile, badgeFileNamePatterns);
-      ice.load('content', this._buildManualCardIndex(manuals, manualIndex, badge), IceCap.MODE_WRITE);
-      ice.load('nav', this._buildManualNav(manuals), IceCap.MODE_WRITE);
-      ice.text('title', 'Manual', IceCap.MODE_WRITE);
-      ice.attr('baseUrl', 'href', baseUrl, IceCap.MODE_WRITE);
-      ice.attr('rootContainer', 'class', ' manual-index');
-      writeFile(fileName, ice.html);
+        const ice = this._buildLayoutDoc();
+        ice.autoDrop = false;
+        ice.attr('rootContainer', 'class', ' manual-root');
 
-      if (manualIndex.globalIndex) {
-        ice.attr('baseUrl', 'href', './', IceCap.MODE_WRITE);
-        writeFile('index.html', ice.html);
-      }
+        const badgeFileNamePatterns = this._builderOptions.badgeFileNamePatterns || defaultManualRequirements;
 
-      ice.attr('rootContainer', 'class', ' manual-index', IceCap.MODE_REMOVE);
+        const fileName = this._getOutputFileName('index.html');
+        const badge = this._writeBadge(manuals, writeFile, badgeFileNamePatterns);
+        ice.load('content', this._buildManualCardIndex(manuals, manualIndex, badge), IceCap.MODE_WRITE);
+        ice.load('nav', this._buildManualNav(manuals), IceCap.MODE_WRITE);
+        ice.text('title', 'Manual', IceCap.MODE_WRITE);
+        ice.drop('baseUrl');
+        ice.attr('rootContainer', 'class', ' manual-index');
+        writeFile(fileName, ice.html);
     }
 
     for (const manual of manuals) {
-      const fileName = this._getManualOutputFileName(manual.name);
-      const baseUrl = this._getBaseUrl(fileName);
+      const ice = this._buildLayoutDoc();
+      ice.autoDrop = false;
+      const fileName = this._getOutputFileName(manual.name);
       ice.load('content', this._buildManual(manual), IceCap.MODE_WRITE);
       ice.load('nav', this._buildManualNav(manuals), IceCap.MODE_WRITE);
-      ice.attr('baseUrl', 'href', baseUrl, IceCap.MODE_WRITE);
+      ice.text('title', manual.title, IceCap.MODE_WRITE);
       writeFile(fileName, ice.html);
     }
 
     if (manualAsset) {
-        copy(manualAsset.name, 'manual/asset');
+      const fileName = this._getOutputFileName(manualAsset.name);
+        copy(manualAsset.name, fileName);
     }
   }
 
@@ -106,12 +108,12 @@ export default class ManualDocBuilder extends DocBuilder {
    * @return {IceCap} built navigation
    * @private
    */
-  _buildManualNav(manuals) {
+  _buildManualNav(manuals, currentManual) {
     const ice = new IceCap(this._readTemplate('manualIndex.html'));
 
     ice.loop('manual', manuals, (i, manual, ice)=>{
       const toc = [];
-      const fileName = this._getManualOutputFileName(manual.name);
+      const fileName = this._getManualNavLink(manual.name, );
       const html = markdown(manual.content);
       const $root = cheerio.load(html).root();
       const h1Count = $root.find('h1').length;
@@ -170,7 +172,7 @@ export default class ManualDocBuilder extends DocBuilder {
     });
 
     return $root.html();
-  }
+  }_getManualNavLink
 
   /**
    * built manual card style index.
@@ -225,13 +227,24 @@ export default class ManualDocBuilder extends DocBuilder {
   }
 
   /**
-   * get manual file name.
-   * @param {string} filePath - target manual markdown file path.
+   * get manual file output name.
+   * @param {string} filePath - target manual file path.
    * @returns {string} file name.
-   * @private
+   * @protected
    */
-  _getManualOutputFileName(filePath) {
-    const fileName = path.parse(filePath).name;
-    return `manual/${fileName}.html`;
+  _getOutputFileName(filePath) {
+    // TODO remove prefix (using config option)
+    const parsed = path.parse(filePath);
+    const extension = parsed.ext === '.md' ? '.html' : parsed.ext;
+    return path.join(this._builderOptions.outputPath || 'manual', parsed.dir, parsed.name + extension);
   }
+
+  _getManualNavLink(dstPath, currentPath) {
+    const dstOutputPath = _getOutputFileName(dstPath);
+    const currentOutputPath = _getOutputFileName(currentPath);
+    const adjustBack = _getBaseUrl(currentPath);
+    const linkPath = path.resolve(currentPath, adjustBack, outputPath);
+    return linkPath;
+  }
+
 }

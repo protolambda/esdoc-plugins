@@ -4,16 +4,6 @@ import cheerio from 'cheerio';
 import DocBuilder from './DocBuilder.js';
 import {markdown} from './util.js';
 
-const defaultManualRequirements = [
-    '(overview.*)',
-    '(design.*)',
-    '(installation.*)|(install.*)',
-    '(usage.*)',
-    '(configuration.*)|(config.*)',
-    '(example.*)',
-    '(faq.*)',
-    '(changelog.*)'
-];
 
 /**
  * Manual Output Builder class.
@@ -23,7 +13,7 @@ const defaultManualRequirements = [
  *  - translate link extension (.md -> .html)
  * - assets can be mixed with the markdown, no need to specify an asset folder
  * - no list of manual files necessary, just specify root folder
- * -
+ * - removed the manual-badge. It's a bit too much focus on metrics.
  */
 export default class ManualV2DocBuilder extends DocBuilder {
 
@@ -43,12 +33,12 @@ export default class ManualV2DocBuilder extends DocBuilder {
         const badgeFileNamePatterns = this._builderOptions.badgeFileNamePatterns || defaultManualRequirements;
 
         const fileName = this._getOutputFileName('index.html');
-        const badge = this._writeBadge(manuals, writeFile, badgeFileNamePatterns);
-        ice.load('content', this._buildManualCardIndex(manuals, manualIndex, badge), IceCap.MODE_WRITE);
+        const badgeFlag = this._writeBadge(manuals, writeFile, badgeFileNamePatterns);
+        ice.load('content', this._buildManualCardIndex(manuals, manualIndex, badgeFlag), IceCap.MODE_WRITE);
         ice.load('nav', this._buildManualNav(manuals), IceCap.MODE_WRITE);
-        ice.text('title', 'Manual', IceCap.MODE_WRITE);
+        ice.text('title', this._builderOptions.manualTitle || 'Manual', IceCap.MODE_WRITE);
         ice.drop('baseUrl');
-        ice.attr('rootContainer', 'class', ' manual-index');
+        ice.attr('rootContainer', 'class', 'manual-index');
         writeFile(fileName, ice.html);
     }
 
@@ -69,51 +59,17 @@ export default class ManualV2DocBuilder extends DocBuilder {
   }
 
   /**
-   * This creates a badge indicating the completeness of the manual.
-   * @param {manual[]} manuals
-   * @param {function(filePath:string, content:string)} writeFile
-   * @param badgeFileNamePatterns The patterns to look for when checking for documentation.
-   * @returns {boolean}
-   * @private
-   */
-  _writeBadge(manuals, writeFile, badgeFileNamePatterns) {
-
-    let count = 0;
-    for (const pattern of badgeFileNamePatterns) {
-      const regexp = new RegExp(pattern, 'i');
-      for (const manual of manuals) {
-        const fileName = path.parse(manual.name).name;
-        if (fileName.match(regexp)) {
-          count++;
-          break;
-        }
-      }
-    }
-
-    // TODO: instead of all-or-nothing, we could "grade" the documentation based
-    // on a percentage of matching file-name patterns.
-    if (count !== badgeFileNamePatterns.length) return false;
-
-    let badge = this._readTemplate('image/manual-badge.svg');
-    badge = badge.replace(/@value@/g, 'perfect');
-    badge = badge.replace(/@color@/g, '#4fc921');
-    writeFile('manual-badge.svg', badge);
-
-    return true;
-  }
-
-  /**
    * build manual navigation.
    * @param {Manual[]} manuals - target manuals.
    * @return {IceCap} built navigation
    * @private
    */
-  _buildManualNav(manuals, currentManual) {
+  _buildManualNav(manuals) {
     const ice = new IceCap(this._readTemplate('manualIndex.html'));
 
     ice.loop('manual', manuals, (i, manual, ice)=>{
       const toc = [];
-      const fileName = this._getManualNavLink(manual.name, );
+      const fileName = this._getAbsLink(this._getOutputFileName(manual.name));
       const html = markdown(manual.content);
       const $root = cheerio.load(html).root();
       const h1Count = $root.find('h1').length;
@@ -159,7 +115,7 @@ export default class ManualV2DocBuilder extends DocBuilder {
       if (!src) return;
       if (src.match(/^http[s]?:/)) return;
       if (src.charAt(0) === '/') return;
-      $el.attr('src', `./manual/${src}`);
+      $el.attr('src', this._getAbsLink(this._getOutputFileName(src)));
     });
     $root.find('a').each((i, el)=>{
       const $el = cheerio(el);
@@ -168,22 +124,24 @@ export default class ManualV2DocBuilder extends DocBuilder {
       if (href.match(/^http[s]?:/)) return;
       if (href.charAt(0) === '/') return;
       if (href.charAt(0) === '#') return;
-      $el.attr('href', `./manual/${href}`);
+      $el.attr('href', this._getAbsLink(this._getOutputFileName(href)));
     });
 
     return $root.html();
-  }_getManualNavLink
+  }
 
   /**
    * built manual card style index.
    * @param {Object[]} manuals - target manual.
+   * @param manualIndex
+   * @param badgeFlag If
    * @return {IceCap} built index.
    * @private
    */
   _buildManualCardIndex(manuals, manualIndex, badgeFlag) {
     const cards = [];
     for (const manual of manuals) {
-      const fileName = this._getManualOutputFileName(manual.name);
+      const fileName = this._getAbsLink(this._getManualOutputFileName(manual.name));
       const html = this._buildManual(manual);
       const $root = cheerio.load(html).root();
       const h1Count = $root.find('h1').length;
@@ -220,8 +178,8 @@ export default class ManualV2DocBuilder extends DocBuilder {
       ice.drop('manualUserIndex', true);
     }
 
-    // fixme?
-    ice.drop('manualBadge', !manualIndex.coverage || !badgeFlag);
+    // Remove old badge from v1.
+    ice.drop('manualBadge', true);
 
     return ice;
   }
@@ -233,18 +191,16 @@ export default class ManualV2DocBuilder extends DocBuilder {
    * @protected
    */
   _getOutputFileName(filePath) {
-    // TODO remove prefix (using config option)
     const parsed = path.parse(filePath);
+    let pathRemainder = parsed.dir;
+    // Strip off path prefix
+    const prefix = this._builderOptions.inputPrefix || './manual/';
+    if (pathRemainder.startsWith(prefix)) {
+      pathRemainder = pathRemainder.substring(prefix.length)
+    }
     const extension = parsed.ext === '.md' ? '.html' : parsed.ext;
-    return path.join(this._builderOptions.outputPath || 'manual', parsed.dir, parsed.name + extension);
-  }
-
-  _getManualNavLink(dstPath, currentPath) {
-    const dstOutputPath = _getOutputFileName(dstPath);
-    const currentOutputPath = _getOutputFileName(currentPath);
-    const adjustBack = _getBaseUrl(currentPath);
-    const linkPath = path.resolve(currentPath, adjustBack, outputPath);
-    return linkPath;
+    const dstFolder = this._builderOptions.outputPath || 'manual';
+    return `${dstFolder}/${pathRemainder}/${parsed.name}/${extension}`;
   }
 
 }

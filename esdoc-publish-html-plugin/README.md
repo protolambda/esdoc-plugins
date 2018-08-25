@@ -69,6 +69,31 @@ The defaults are listed in the example below.
 }
 ```
 
+New experimental manualV2 options:
+
+```json
+{
+  "name": "esdoc-publish-html-plugin",
+  "option": {
+    "globalOptions": {
+      // ...
+      // rootPath: prepended to all absolute links, used for nesting sites.
+      // (e.g. user123.github.io/my-project/ would become "rootPath": "/my-project")
+      rootPath: "/"
+    },
+    "builders": {
+      // ...
+      "manualV2": {
+        "manualTitle": "Docs",
+        "inputPrefix": "./manual/",
+        "outputPath": "manual"
+      }
+    }
+  }
+}
+
+```
+
 If the `builders` option is missing, all default plugins will be used with default configuration.
 
 ## LICENSE

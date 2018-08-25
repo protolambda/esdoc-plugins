@@ -5,6 +5,6 @@ import HtmlBasePlugin from './HtmlBasePlugin';
 import ManualV2DocBuilder from "./Builder/ManualV2DocBuilder";
 
 const Plugin = new HtmlBasePlugin();
-Plugin.builders.manual = ((template, data, tags, builderOpts, globalOpts) =>
+Plugin.builders.manualV2 = ((template, data, tags, builderOpts, globalOpts) =>
     new ManualV2DocBuilder(template, data, tags, builderOpts, globalOpts));
 module.exports = Plugin;

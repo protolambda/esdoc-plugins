@@ -76,6 +76,17 @@ export default class Builder {
     }
 
     /**
+     * Get the absolute link path for the given destination path. This applies the globally configured rootPath
+     * @param dstPath The path of the resource relative to the output folder root.
+     * @return {string} The absolute path used in the website.
+     * @protected
+     */
+    _getAbsLink(dstPath) {
+        return (this._globalOptions.rootPath || '/') + dstPath;
+    }
+
+
+    /**
      * build common layout output.
      * @return {IceCap} layout output.
      * @protected

@@ -24,6 +24,7 @@ class Plugin {
     this._site = option.site || packageObj.homepage;
     this._image = option.image;
     this._author = option.author || this._getAuthor(packageObj);
+    this._rootPath = option.rootPath || '/';
   }
 
   onPublish(ev) {
@@ -51,7 +52,7 @@ class Plugin {
       const $el = $('header a[href="./"]');
       $el.text('');
       $el.css({display: 'flex', 'align-items': 'center'});
-      $el.append('<img src="./image/brand_logo' + path.extname(this._logo) + '" style="width:34px;">');
+      $el.append(`<img src="${this._rootPath}image/brand_logo${path.extname(this._logo)}" style="width:34px;">`);
     }
 
     // title
@@ -65,7 +66,8 @@ class Plugin {
     if (this._repository) {
       if (this._repository.indexOf('https://github.com/') === 0) {
         const style = 'style="position:relative; top:3px;"';
-        $('header').append(`<a ${style} href="${this._repository}"><img width="20px" src="./image/github.png"/></a>`);
+        $('header').append(
+          `<a ${style} href="${this._repository}"><img width="20px" src="${this._rootPath}image/github.png"/></a>`);
       } else {
         $('header').append(`<a href="${this._repository}">Repository</a>`);
       }

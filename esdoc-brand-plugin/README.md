@@ -21,7 +21,9 @@ This plugin takes a title and a repository from `package.json (name, repsitory)`
         "repository": "https://github.com/foo/bar",
         "site": "http://my-library.org",
         "author": "https://twitter.com/foo",
-        "image": "http://my-library.org/logo.png"
+        "image": "http://my-library.org/logo.png",
+        // Path absolute links start with. Can be used to nest websites.
+        "rootPath": "/"
       }
     }
   ]

@@ -12,7 +12,7 @@ import SearchIndexBuilder from './Builder/SearchIndexBuilder.js';
 import SourceDocBuilder from './Builder/SourceDocBuilder.js';
 import TestDocBuilder from './Builder/TestDocBuilder.js';
 import TestFileDocBuilder from './Builder/TestFileDocBuilder.js';
-import ManualDocBuilder from './Builder/ManualDocBuilder.js';
+import ManualV2DocBuilder from "./Builder/ManualV2DocBuilder";
 
 export default class HtmlBasePlugin {
 
@@ -26,7 +26,7 @@ export default class HtmlBasePlugin {
             "staticFile",
             "searchIndex",
             "sourceDoc",
-            "manual",
+            "manualV2",
             "testDoc",
             "testFileDoc"
         ];
@@ -45,7 +45,7 @@ export default class HtmlBasePlugin {
             staticFile:     builder(StaticFileBuilder),
             searchIndex:    builder(SearchIndexBuilder),
             sourceDoc:      builder(SourceDocBuilder),
-            manual:         builder(ManualDocBuilder),
+            manualV2:       builder(ManualV2DocBuilder),
             testDoc:        builder(TestDocBuilder),
             testFileDoc:    builder(TestFileDocBuilder)
         };

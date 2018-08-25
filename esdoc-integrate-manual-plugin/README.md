@@ -14,21 +14,8 @@ npm install esdoc-integrate-manual-plugin
       "name": "esdoc-integrate-manual-plugin",
       "option": {
         "index": "./manual/index.md",
-        "globalIndex": true,
-        "asset": "./manual/asset",
-        "files": [
-          "./manual/overview.md",
-          "./manual/design.md",
-          "./manual/installation.md",
-          "./manual/usage1.md",
-          "./manual/usage2.md",
-          "./manual/tutorial.md",
-          "./manual/configuration.md",
-          "./manual/example.md",
-          "./manual/advanced.md",
-          "./manual/faq.md",
-          "./CHANGELOG.md"
-        ]
+        // Manual shource folder, you would probably like to change the manualV2-builder prefixPath option to reflect this.
+        "manualFolder": "./manual/"
       }
     }
   ]

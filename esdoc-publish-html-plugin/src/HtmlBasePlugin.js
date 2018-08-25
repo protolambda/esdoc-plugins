@@ -63,7 +63,7 @@ export default class HtmlBasePlugin {
         this._exec(this._docs, ev.data.writeFile, ev.data.copyDir, ev.data.readFile);
     }
 
-    _exec(tags, writeFile, copyDir, readFile) {
+    _exec(tags, writeFile, copy, readFile) {
         IceCap.debug = !!this._option.debug;
 
         const data = taffy(tags);

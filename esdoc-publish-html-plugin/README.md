@@ -79,7 +79,7 @@ New experimental manualV2 options:
       // ...
       // rootPath: prepended to all absolute links, used for nesting sites.
       // (e.g. user123.github.io/my-project/ would become "rootPath": "/my-project")
-      rootPath: "/"
+      "rootPath": "/"
     },
     "builders": {
       // ...

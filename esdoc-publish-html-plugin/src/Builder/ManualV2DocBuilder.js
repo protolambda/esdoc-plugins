@@ -21,40 +21,38 @@ export default class ManualV2DocBuilder extends DocBuilder {
 
     const manuals = this._tags.filter(tag => tag.kind === 'manual');
     const manualIndex = this._tags.find(tag => tag.kind === 'manualIndex');
-    const manualAsset = this._tags.find(tag => tag.kind === 'manualAsset');
+    const manualAssets = this._tags.filter(tag => tag.kind === 'manualAsset');
 
     if (manuals.length === 0) return;
 
     {
-        const ice = this._buildLayoutDoc();
-        ice.autoDrop = false;
-        ice.attr('rootContainer', 'class', ' manual-root');
+      const ice = this._buildLayoutDoc();
+      ice.autoDrop = false;
+      ice.attr('rootContainer', 'class', ' manual-root');
 
-        const badgeFileNamePatterns = this._builderOptions.badgeFileNamePatterns || defaultManualRequirements;
-
-        const fileName = this._getOutputFileName('index.html');
-        const badgeFlag = this._writeBadge(manuals, writeFile, badgeFileNamePatterns);
-        ice.load('content', this._buildManualCardIndex(manuals, manualIndex, badgeFlag), IceCap.MODE_WRITE);
-        ice.load('nav', this._buildManualNav(manuals), IceCap.MODE_WRITE);
-        ice.text('title', this._builderOptions.manualTitle || 'Manual', IceCap.MODE_WRITE);
-        ice.drop('baseUrl');
-        ice.attr('rootContainer', 'class', 'manual-index');
-        writeFile(fileName, ice.html);
+      const fileName = this._getManualOutputFileName('index.html');
+      ice.load('content', this._buildManualCardIndex(manuals, manualIndex), IceCap.MODE_WRITE);
+      ice.load('nav', this._buildManualNav(manuals), IceCap.MODE_WRITE);
+      ice.text('title', this._builderOptions.manualTitle || 'Manual', IceCap.MODE_WRITE);
+      ice.drop('baseUrl');
+      ice.attr('rootContainer', 'class', 'manual-index');
+      writeFile(fileName, ice.html);
     }
 
     for (const manual of manuals) {
       const ice = this._buildLayoutDoc();
       ice.autoDrop = false;
-      const fileName = this._getOutputFileName(manual.name);
+      const fileName = this._getManualOutputFileName(manual.name);
       ice.load('content', this._buildManual(manual), IceCap.MODE_WRITE);
       ice.load('nav', this._buildManualNav(manuals), IceCap.MODE_WRITE);
       ice.text('title', manual.title, IceCap.MODE_WRITE);
       writeFile(fileName, ice.html);
     }
 
-    if (manualAsset) {
-      const fileName = this._getOutputFileName(manualAsset.name);
-        copy(manualAsset.name, fileName);
+    // Copy all assets over to the build output.
+    for (const manualAsset of manualAssets) {
+      const fileName = this._getManualOutputFileName(manualAsset.name);
+      copy(manualAsset.longname, fileName);
     }
   }
 
@@ -69,7 +67,7 @@ export default class ManualV2DocBuilder extends DocBuilder {
 
     ice.loop('manual', manuals, (i, manual, ice)=>{
       const toc = [];
-      const fileName = this._getAbsLink(this._getOutputFileName(manual.name));
+      const fileName = this._getAbsLink(this._getManualOutputFileName(manual.name));
       const html = markdown(manual.content);
       const $root = cheerio.load(html).root();
       const h1Count = $root.find('h1').length;
@@ -115,7 +113,7 @@ export default class ManualV2DocBuilder extends DocBuilder {
       if (!src) return;
       if (src.match(/^http[s]?:/)) return;
       if (src.charAt(0) === '/') return;
-      $el.attr('src', this._getAbsLink(this._getOutputFileName(src)));
+      $el.attr('src', this._getAbsLink(this._getManualOutputFileName(src)));
     });
     $root.find('a').each((i, el)=>{
       const $el = cheerio(el);
@@ -124,7 +122,7 @@ export default class ManualV2DocBuilder extends DocBuilder {
       if (href.match(/^http[s]?:/)) return;
       if (href.charAt(0) === '/') return;
       if (href.charAt(0) === '#') return;
-      $el.attr('href', this._getAbsLink(this._getOutputFileName(href)));
+      $el.attr('href', this._getAbsLink(this._getManualOutputFileName(href)));
     });
 
     return $root.html();
@@ -134,11 +132,10 @@ export default class ManualV2DocBuilder extends DocBuilder {
    * built manual card style index.
    * @param {Object[]} manuals - target manual.
    * @param manualIndex
-   * @param badgeFlag If
    * @return {IceCap} built index.
    * @private
    */
-  _buildManualCardIndex(manuals, manualIndex, badgeFlag) {
+  _buildManualCardIndex(manuals, manualIndex) {
     const cards = [];
     for (const manual of manuals) {
       const fileName = this._getAbsLink(this._getManualOutputFileName(manual.name));
@@ -190,7 +187,7 @@ export default class ManualV2DocBuilder extends DocBuilder {
    * @returns {string} file name.
    * @protected
    */
-  _getOutputFileName(filePath) {
+  _getManualOutputFileName(filePath) {
     const parsed = path.parse(filePath);
     let pathRemainder = parsed.dir;
     // Strip off path prefix
@@ -200,7 +197,7 @@ export default class ManualV2DocBuilder extends DocBuilder {
     }
     const extension = parsed.ext === '.md' ? '.html' : parsed.ext;
     const dstFolder = this._builderOptions.outputPath || 'manual';
-    return `${dstFolder}/${pathRemainder}/${parsed.name}/${extension}`;
+    return `${dstFolder}/${pathRemainder}/${parsed.name}${extension}`;
   }
 
 }

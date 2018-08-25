@@ -14,6 +14,7 @@ import {markdown} from './util.js';
  * - assets can be mixed with the markdown, no need to specify an asset folder
  * - no list of manual files necessary, just specify root folder
  * - removed the manual-badge. It's a bit too much focus on metrics.
+ * - removed badly designed cards, make page cleaner.
  */
 export default class ManualV2DocBuilder extends DocBuilder {
 
@@ -31,7 +32,7 @@ export default class ManualV2DocBuilder extends DocBuilder {
       ice.attr('rootContainer', 'class', ' manual-root');
 
       const fileName = this._getManualOutputFileName('index.html');
-      ice.load('content', this._buildManualCardIndex(manuals, manualIndex), IceCap.MODE_WRITE);
+      ice.load('content', this._buildManual(manualIndex), IceCap.MODE_WRITE);
       ice.load('nav', this._buildManualNav(manuals), IceCap.MODE_WRITE);
       ice.text('title', this._builderOptions.manualTitle || 'Manual', IceCap.MODE_WRITE);
       ice.drop('baseUrl');
@@ -63,7 +64,7 @@ export default class ManualV2DocBuilder extends DocBuilder {
    * @private
    */
   _buildManualNav(manuals) {
-    const ice = new IceCap(this._readTemplate('manualIndex.html'));
+    const ice = new IceCap(this._readTemplate('manualToc.html'));
 
     ice.loop('manual', manuals, (i, manual, ice)=>{
       const toc = [];
@@ -129,59 +130,6 @@ export default class ManualV2DocBuilder extends DocBuilder {
   }
 
   /**
-   * built manual card style index.
-   * @param {Object[]} manuals - target manual.
-   * @param manualIndex
-   * @return {IceCap} built index.
-   * @private
-   */
-  _buildManualCardIndex(manuals, manualIndex) {
-    const cards = [];
-    for (const manual of manuals) {
-      const fileName = this._getAbsLink(this._getManualOutputFileName(manual.name));
-      const html = this._buildManual(manual);
-      const $root = cheerio.load(html).root();
-      const h1Count = $root.find('h1').length;
-
-      $root.find('h1').each((i, el)=>{
-        const $el = cheerio(el);
-        const label = $el.text();
-        const link = h1Count === 1 ? fileName : `${fileName}#${$el.attr('id')}`;
-        let card = `<h1>${label}</h1>`;
-        const nextAll = $el.nextAll();
-
-        for (let i = 0; i < nextAll.length; i++) {
-          const next = nextAll.get(i);
-          const tagName = next.tagName.toLowerCase();
-          if (tagName === 'h1') return;
-          const $next = cheerio(next);
-          card += `<${tagName}>${$next.html()}</${tagName}>`;
-        }
-
-        cards.push({label, link, card});
-      });
-    }
-
-    const ice = new IceCap(this._readTemplate('manualCardIndex.html'));
-    ice.loop('cards', cards, (i, card, ice)=>{
-      ice.attr('link', 'href', card.link);
-      ice.load('card', card.card);
-    });
-
-    if (manualIndex && manualIndex.content) {
-      const userIndex = markdown(manualIndex.content);
-      ice.load('manualUserIndex', userIndex);
-    } else {
-      ice.drop('manualUserIndex', true);
-    }
-
-    // Remove old badge from v1.
-    ice.drop('manualBadge', true);
-
-    return ice;
-  }
-
-  /**
    * get manual file output name.
    * @param {string} filePath - target manual file path.
    * @returns {string} file name.
@@ -195,9 +143,12 @@ export default class ManualV2DocBuilder extends DocBuilder {
     if (pathRemainder.startsWith(prefix)) {
       pathRemainder = pathRemainder.substring(prefix.length)
     }
+    if (pathRemainder.length > 0) {
+      pathRemainder = '/' + pathRemainder;
+    }
     const extension = parsed.ext === '.md' ? '.html' : parsed.ext;
     const dstFolder = this._builderOptions.outputPath || 'manual';
-    return `${dstFolder}/${pathRemainder}/${parsed.name}${extension}`;
+    return `${dstFolder}${pathRemainder}/${parsed.name}${extension}`;
   }
 
 }

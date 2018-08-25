@@ -101,6 +101,27 @@ export default class Builder {
             ice.drop('esdocVersion');
         }
 
+        const cssSheets = ['css/style.css', 'css/prettify-tomorrow.css'];
+        const headScripts = ['script/prettify/prettify.js', 'script/manual.js'];
+        const bodyScripts = [
+            'script/search_index.js',
+            'script/search.js',
+            'script/pretty-print.js',
+            'script/inherited-summary.js',
+            'script/test-summary.js',
+            'script/inner-link.js',
+            'script/patch-for-local.js'
+        ];
+        ice.loop('layoutCss', cssSheets, (i, sheet, ice)=>{
+            ice.attr('layoutCss', 'href', this._getAbsLink(sheet));
+        });
+        ice.loop('layoutHeadScript', headScripts, (i, headScript, ice)=>{
+           ice.attr('layoutHeadScript', 'src', this._getAbsLink(headScript));
+        });
+        ice.loop('layoutBodyScript', bodyScripts, (i, bodyScript, ice)=>{
+            ice.attr('layoutBodyScript', 'src', this._getAbsLink(bodyScript));
+        });
+
         ice.load('pageHeader', this._buildPageHeader());
         ice.load('nav', this._buildNavDoc());
         return ice;

@@ -49,7 +49,7 @@ class Plugin {
 
     // logo
     if (this._logo) {
-      const $el = $('header a[href="./"]');
+      const $el = $('header a.home-link');
       $el.text('');
       $el.css({display: 'flex', 'align-items': 'center'});
       $el.append(`<img src="${this._rootPath}image/brand_logo${path.extname(this._logo)}" style="width:34px;">`);
